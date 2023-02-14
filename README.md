@@ -14,5 +14,11 @@ Looks good.
 
 ## Extract Places
 
+This will extract the place data. Eventually will need to be two files.
+
+```
+$ cd extractPlaces/
+$ go run extractPlaces.go -i ../properNames.tsv -o places.csv
+```
 
 
