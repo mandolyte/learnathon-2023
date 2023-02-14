@@ -5,10 +5,14 @@
 This is just a quick verification that the TSV parses OK.
 
 ```
-go run convertToCsv.go -i properNames.tsv -o properNames.csv
+$ cd convertToCsv/
+$ go run convertToCsv.go -i ../properNames.tsv -o properNames.csv
+$ 
 ```
 
 Looks good.
+
+## Extract Places
 
 
 
