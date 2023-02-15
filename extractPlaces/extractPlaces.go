@@ -86,6 +86,7 @@ func main() {
 
 	sheaders := []string{
 		"UniqueName",
+		"Qualifier",
 		"Significance",
 		"Strongs",
 		"ESV Name",
@@ -144,6 +145,7 @@ func main() {
 			// ESV name (and KJV, NIV),STEPBible link for first,Refs
 			// Will skip the step bible link
 			uname := ""
+			qualifier := ""
 			significance := ""
 			strongs := ""
 			esvName := ""
@@ -154,7 +156,15 @@ func main() {
 					significance = v
 				}
 				if c == 1 {
-					uname = v
+					// the unique name may have a qualifier.
+					// if so, it will follow this pattern: "west|Arabia@2Sa.23.35"
+					x := strings.Split(v, "|")
+					if len(x) > 1 {
+						qualifier = x[0]
+						uname = x[1]
+					} else {
+						uname = v
+					}
 				}
 				if c == 2 {
 					strongs = v
@@ -169,6 +179,7 @@ func main() {
 			var srow []string
 			srow = append(srow,
 				uname,        // unique name
+				qualifier,    // qualifer
 				significance, // significance
 				strongs,      // strongs
 				esvName,      // esv name
