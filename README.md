@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS "significance"(
   "UniqueName" TEXT,
   "Significance" TEXT,
   "Strongs" TEXT,
-  "ESV Name" TEXT,
+  "ESV Name" TEXT,push
   "References" TEXT
 );
 sqlite> select count(*) from significance ;
