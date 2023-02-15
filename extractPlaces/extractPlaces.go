@@ -137,7 +137,34 @@ func main() {
 			if j == len(records) {
 				break
 			}
-			if records[j][0] == placeMarker {
+			cella := strings.TrimSpace(records[j][0])
+			log.Printf("cella/%v/", cella)
+			if cella == placeMarker {
+				break
+			}
+			// at the end of the place data are empty rows
+			if cella == "" {
+				j++
+				continue
+			}
+			// if it is a note
+			if strings.HasPrefix(cella, "NOTES") {
+				j++
+				continue
+			}
+			// if the string is really long it is the note content
+			if len(cella) > 21 {
+				j++
+				continue
+			}
+			if strings.HasPrefix(cella, "#==") {
+				break
+			}
+			if strings.HasPrefix(cella, "$==") {
+				break
+			}
+			// data misplace?
+			if strings.HasPrefix(cella, "Rahab@Jos.2.1=H7343") {
 				break
 			}
 			// columns for significance data:
