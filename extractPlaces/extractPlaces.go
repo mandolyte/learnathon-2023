@@ -28,18 +28,26 @@ func main() {
 	output := flag.String("o", "", "Output CSV filename")
 	flag.Parse()
 
-	// open output file
+	// open output file for main place table
 	var w *csv.Writer
 	if *output == "" {
 		usage("Missing output filename")
 	} else {
 		fo, foerr := os.Create(*output)
 		if foerr != nil {
-			log.Fatal("os.Create() Error:" + foerr.Error())
+			log.Fatal("os.Create() Error for main place file:" + foerr.Error())
 		}
 		defer fo.Close()
 		w = csv.NewWriter(fo)
 	}
+	// open output file for significance table
+	var s *csv.Writer
+	fo, foerr := os.Create(strings.TrimSuffix(*output, ".csv") + "_significance.csv")
+	if foerr != nil {
+		log.Fatal("os.Create() Error for significance file:" + foerr.Error())
+	}
+	defer fo.Close()
+	s = csv.NewWriter(fo)
 
 	// open input file
 	var r *csv.Reader
@@ -76,16 +84,30 @@ func main() {
 		"Palopenmaps URL",
 	}
 
+	sheaders := []string{
+		"UniqueName",
+		"Significance",
+		"Strongs",
+		"ESV Name",
+		"References",
+	}
+
 	// write the header row first
 	//strings.ReplaceAll(str, " ", "")
 	herr := writeRow(w, headers)
 	if herr != nil {
 		log.Fatalf("writeRow() error on header row: \n%v\n", herr)
 	}
+	serr := writeRow(s, sheaders)
+	if serr != nil {
+		log.Fatalf("writeRow() error on significance header row: \n%v\n", herr)
+	}
+
 	const dataStart = 10330
+	const placeMarker = "$========== PLACE"
 	for row := 0; row < len(records); row++ {
 
-		if records[row][0] == "$========== PLACE" && row > dataStart {
+		if records[row][0] == placeMarker && row > dataStart {
 			// place data doesn't begin until row 10326
 			// but there is intro data near the beginning
 			// that we need to overlook
@@ -93,6 +115,7 @@ func main() {
 			continue
 		}
 
+		// main place data file
 		var arow []string
 		// fill up the row
 		arow = append(arow,
@@ -106,8 +129,60 @@ func main() {
 		if werr != nil {
 			log.Fatalf("writeRow() error on row %v: \n%v\n", row, werr)
 		}
+
+		// significance file
+		j := row + 2 // beginning after the main place data row
+		for {
+			if j == len(records) {
+				break
+			}
+			if records[j][0] == placeMarker {
+				break
+			}
+			// columns for significance data:
+			// 	- Significance,UniqueName,dStrong«eStrong=Heb/Grk,
+			// ESV name (and KJV, NIV),STEPBible link for first,Refs
+			// Will skip the step bible link
+			uname := ""
+			significance := ""
+			strongs := ""
+			esvName := ""
+			refs := ""
+
+			for c, v := range records[j] {
+				if c == 0 {
+					significance = v
+				}
+				if c == 1 {
+					uname = v
+				}
+				if c == 2 {
+					strongs = v
+				}
+				if c == 3 {
+					esvName = v
+				}
+				if c == 5 {
+					refs = v
+				}
+			}
+			var srow []string
+			srow = append(srow,
+				uname,        // unique name
+				significance, // significance
+				strongs,      // strongs
+				esvName,      // esv name
+				refs,         // refs
+			)
+			serr := writeRow(s, srow)
+			if serr != nil {
+				log.Fatalf("writeRow() error on row %v: \n%v\n", srow, serr)
+			}
+			j++
+		}
 	}
 	w.Flush()
+	s.Flush()
 }
 
 func writeRow(w *csv.Writer, cells []string) error {
@@ -122,4 +197,5 @@ func usage(msg string) {
 	fmt.Println(msg + "\n")
 	fmt.Print("Usage: parseProperNames -i input.csv -o output.csv\n")
 	flag.PrintDefaults()
+	os.Exit(1)
 }
