@@ -9,13 +9,13 @@ echo "Run the database imports"
 sqlite3 ../properNames.db <<EoF
 .echo on
 drop table if exists places;
-drop table if exists significance;
+drop table if exists places_significance;
 
 .mode csv
 .import places.csv places
 select count(*) from places;
-.import places_significance.csv significance
-select count(*) from significance;
+.import places_significance.csv places_significance
+select count(*) from places_significance;
 .exit
 EoF
 

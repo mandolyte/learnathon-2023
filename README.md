@@ -57,3 +57,32 @@ sqlite> select count(*) from significance ;
 2414
 sqlite> 
 ```
+
+
+## Extract Persons
+
+Similar to above. Run the script in the `extractPersons` folder to create the tables: `sh run.sh`
+
+
+## Sample Queries
+
+```sql
+select EsvName, GoogleMapURL 
+from places a 
+inner join places_significance b 
+on a.UniqueName = b.UniqueName
+where a.uniquename = 'Arabia@2Sa.23.35'
+;
+
+select *
+from places 
+where uniquename like 'Arabia%'
+limit 10;
+
+-- Arabia@2Sa.23.35=H6152B
+
+select * 
+from places_significance 
+where uniquename like 'Arabia%'
+limit 10;
+```

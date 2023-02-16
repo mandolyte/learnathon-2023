@@ -10,9 +10,9 @@ import (
 )
 
 /*
-Here is the documentation on the "columns" for place data:
-	UniqueName=uStrong	OpenBible name=Near	Founder	People living there	GoogleMap URL	Palopenmaps URL	>Geographical area
-	- Significance	UniqueName	dStrong«eStrong=Heb/Grk	ESV name (and KJV, NIV)	STEPBible link for first Refs                 /	All Refs
+Here is the documentation on the "columns" for person data:
+	UnifiedName=uStrong	Description	Parents Male+Female	Siblings	Partners	Offspring	>Tribe/Nation of father	#Summary description
+	- Significance	UniqueName	dStrong«eStrong=Heb/Grk	ESV name (and KJV, NIV)	STEPBible link for first Refs                                 /	All Refs
 
 There is one line for first row, which is "key" data
 Then one or more rows for the second row, which refers to
@@ -28,14 +28,14 @@ func main() {
 	output := flag.String("o", "", "Output CSV filename")
 	flag.Parse()
 
-	// open output file for main place table
+	// open output file for main person table
 	var w *csv.Writer
 	if *output == "" {
 		usage("Missing output filename")
 	} else {
 		fo, foerr := os.Create(*output)
 		if foerr != nil {
-			log.Fatal("os.Create() Error for main place file:" + foerr.Error())
+			log.Fatal("os.Create() Error for main person file:" + foerr.Error())
 		}
 		defer fo.Close()
 		w = csv.NewWriter(fo)
@@ -73,17 +73,21 @@ func main() {
 	}
 
 	// read loop for CSV
-	//	UniqueName=uStrong	OpenBible name=Near	Founder	People living there	GoogleMap URL	Palopenmaps URL	>Geographical area
+	// UnifiedName=uStrong	Description	Parents Male+Female	Siblings	Partners	Offspring	>Tribe/Nation of father	#Summary description
 
 	headers := []string{
-		"UniqueName",
-		"Strongs",
-		"OpenBible",
-		"Founder",
-		"PeopleGroup",
-		"GoogleMapURL",
-		"PalopenmapsURL",
+		"UniqueName", // sans the Strong's number
+		"UnifiedName",
+		"Description",
+		"Parents",
+		"Siblings",
+		"Partners",
+		"Offspring",
+		"TribeNation",
+		"Summary",
 	}
+
+	// - Significance	UniqueName	dStrong«eStrong=Heb/Grk	ESV name (and KJV, NIV)	STEPBible link for first Refs                                 /	All Refs
 
 	sheaders := []string{
 		"UniqueName",
@@ -105,47 +109,61 @@ func main() {
 		log.Fatalf("writeRow() error on significance header row: \n%v\n", herr)
 	}
 
-	const dataStart = 10330
-	const placeMarker = "$========== PLACE"
+	const dataStart = 112
+	const personMarker = "$========== PERSON(s)"
 	for row := 0; row < len(records); row++ {
 
-		if records[row][0] == placeMarker && row > dataStart {
-			// place data doesn't begin until row 10326
+		if records[row][0] == personMarker && row > dataStart {
+			// person data doesn't begin until row 112
 			// but there is intro data near the beginning
 			// that we need to overlook
 		} else {
 			continue
 		}
 
-		// main place data file
+		// main person data file
 		var arow []string
 		// fill up the row
-		// split strongs from unique name
-		x := strings.Split(records[row+1][0], "=")
+		// "UniqueName", // sans the Strong's number
+		// "UnifiedName",
+		// "Description",
+		// "Parents",
+		// "Siblings",
+		// "Partners",
+		// "Offspring",
+		// "Tribe/Nation",
+		// "Summary",
+		unifiedName := records[row+1][0]
+		x := strings.Split(unifiedName, "=")
+
 		arow = append(arow,
-			x[0], x[1],
-			records[row+1][1],
-			records[row+1][2],
-			records[row+1][3],
-			strings.ReplaceAll(records[row+1][4], " ", ""), // data has spaces where they should not be
-			records[row+1][5])
+			x[0],
+			unifiedName,
+			records[row+1][1], // desc
+			records[row+1][2], // parents
+			records[row+1][3], // sibs
+			records[row+1][4], // partners
+			records[row+1][5], // offspring
+			records[row+1][6], // tribe/nation
+			records[row+1][7], // Summary
+		)
 		werr := writeRow(w, arow)
 		if werr != nil {
 			log.Fatalf("writeRow() error on row %v: \n%v\n", row, werr)
 		}
 
 		// significance file
-		j := row + 2 // beginning after the main place data row
+		j := row + 2 // beginning after the main person data row
 		for {
 			if j == len(records) {
 				break
 			}
 			cella := strings.TrimSpace(records[j][0])
 			log.Printf("cella/%v/", cella)
-			if cella == placeMarker {
+			if cella == personMarker {
 				break
 			}
-			// at the end of the place data are empty rows
+			// at the end of the person data are empty rows
 			if cella == "" {
 				j++
 				continue
@@ -164,10 +182,6 @@ func main() {
 				break
 			}
 			if strings.HasPrefix(cella, "$==") {
-				break
-			}
-			// data misplace?
-			if strings.HasPrefix(cella, "Rahab@Jos.2.1=H7343") {
 				break
 			}
 			// columns for significance data:
